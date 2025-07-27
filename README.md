@@ -68,7 +68,7 @@ brain-tumor-detection/
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/brain-tumor-detection.git
+git clone https://github.com/Snowman-cpu/Brain-tumor-Detection.git
 cd brain-tumor-detection
 ```
 
