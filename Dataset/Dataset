@@ -1,0 +1,18 @@
+The dataset I used contains 7023 human brain MRI images, which I sorted into four classes: glioma, meningioma, pituitary, and no tumor.
+I sourced the images from the following datasets:
+
+1. figshare dataset (Used for glioma class)
+This dataset, provided by Jun Cheng, is one of the most widely cited for this task.
+It contains T1-weighted contrast-enhanced MRI images for three tumor types: glioma, meningioma, and pituitary.
+
+Link: https://figshare.com/articles/dataset/brain_tumor_dataset/1512427
+
+2. SARTAJ Dataset (Used for meningioma and pituitary classes)
+This dataset, available on Kaggle, contains images for four classes: glioma, meningioma, pituitary, and no tumor.
+
+Link: https://www.kaggle.com/datasets/sartajbhuvaji/brain-tumor-classification-mri
+
+3. Br35H Dataset (Used for no tumor class)
+This dataset is also available on Kaggle and is often used for binary classification (tumor vs. no tumor).
+
+Link: https://www.kaggle.com/datasets/ahmedhamada0/brain-tumor-detection
