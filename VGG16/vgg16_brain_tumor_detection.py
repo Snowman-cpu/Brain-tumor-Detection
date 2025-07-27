@@ -1,0 +1,197 @@
+import os
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.applications import VGG16
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.layers import Dense, Dropout, Flatten, GlobalAveragePooling2D
+from tensorflow.keras.optimizers import Adam
+
+# Set the path to the dataset
+dataset_path = ""
+
+# Define the training and testing directories
+train_dir = os.path.join(dataset_path, "Training")
+test_dir = os.path.join(dataset_path, "Testing")
+
+# Define the categories
+categories = ["glioma", "meningioma", "notumor", "pituitary"]
+
+# Load and preprocess the dataset
+train_data = []
+for category in categories:
+    folder_path = os.path.join(train_dir, category)
+    images = os.listdir(folder_path)
+    count = len(images)
+    train_data.append(pd.DataFrame({"Image": images, "Category": [category] * count, "Count": [count] * count}))
+
+train_df = pd.concat(train_data, ignore_index=True)
+
+# Visualize the distribution of tumor types
+plt.figure(figsize=(8, 6))
+sns.barplot(data=train_df, x="Category", y="Count")
+plt.title("Distribution of Tumor Types")
+plt.xlabel("Tumor Type")
+plt.ylabel("Count")
+plt.show()
+
+# Set the image size, batch size, and epochs
+image_size = (224, 224)  # VGG16 requires 224x224 input
+batch_size = 32
+epochs = 30
+
+# Data augmentation and preprocessing
+train_datagen = ImageDataGenerator(
+    rescale=1./255,
+    rotation_range=20,
+    width_shift_range=0.1,
+    height_shift_range=0.1,
+    shear_range=0.1,
+    zoom_range=0.1,
+    horizontal_flip=True,
+    vertical_flip=True,
+    fill_mode="nearest"
+)
+
+test_datagen = ImageDataGenerator(rescale=1./255)
+
+train_generator = train_datagen.flow_from_directory(
+    train_dir,
+    target_size=image_size,
+    batch_size=batch_size,
+    class_mode="categorical"
+)
+
+test_generator = test_datagen.flow_from_directory(
+    test_dir,
+    target_size=image_size,
+    batch_size=batch_size,
+    class_mode="categorical",
+    shuffle=False
+)
+
+# Load pre-trained VGG16 model without top layers
+base_model = VGG16(weights='imagenet', include_top=False, input_shape=(image_size[0], image_size[1], 3))
+
+# Freeze the base model layers to prevent them from being updated during training
+for layer in base_model.layers:
+    layer.trainable = False
+
+# Create a model by adding classification layers on top of VGG16
+model = Sequential([
+    base_model,
+    GlobalAveragePooling2D(),
+    Dense(512, activation='relu'),
+    Dropout(0.5),
+    Dense(len(categories), activation='softmax')
+])
+
+# Compile the model
+model.compile(
+    optimizer=Adam(learning_rate=0.0001),
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# Display model summary
+model.summary()
+
+# Train the model
+history = model.fit(
+    train_generator,
+    steps_per_epoch=train_generator.samples // batch_size,
+    epochs=epochs,
+    validation_data=test_generator,
+    validation_steps=test_generator.samples // batch_size
+)
+
+# Plot training and validation accuracy
+plt.figure(figsize=(10, 4))
+plt.subplot(1, 2, 1)
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
+plt.title('Model Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend(['Train', 'Validation'])
+
+# Plot training and validation loss
+plt.subplot(1, 2, 2)
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('Model Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend(['Train', 'Validation'])
+plt.tight_layout()
+plt.show()
+
+# Evaluate the model
+loss, accuracy = model.evaluate(test_generator, steps=test_generator.samples // batch_size)
+print("Test Loss:", loss)
+print("Test Accuracy:", accuracy)
+
+# Make predictions on the test dataset
+predictions = model.predict(test_generator)
+predicted_categories = np.argmax(predictions, axis=1)
+true_categories = test_generator.classes
+
+# Create a confusion matrix
+confusion_matrix = tf.math.confusion_matrix(true_categories, predicted_categories)
+
+# Plot the confusion matrix
+plt.figure(figsize=(8, 6))
+sns.heatmap(confusion_matrix, annot=True, fmt="d", cmap="Blues")
+plt.title("Confusion Matrix")
+plt.xlabel("Predicted")
+plt.ylabel("True")
+plt.xticks(ticks=np.arange(len(categories)), labels=categories)
+plt.yticks(ticks=np.arange(len(categories)), labels=categories)
+plt.show()
+
+# Calculate precision, recall, and F1-score
+precision = np.diag(confusion_matrix) / np.sum(confusion_matrix, axis=0)
+recall = np.diag(confusion_matrix) / np.sum(confusion_matrix, axis=1)
+f1_score = 2 * (precision * recall) / (precision + recall)
+
+# Print metrics for each class
+for i, category in enumerate(categories):
+    print(f"Class: {category}")
+    print(f"Precision: {precision[i]:.4f}")
+    print(f"Recall: {recall[i]:.4f}")
+    print(f"F1-Score: {f1_score[i]:.4f}")
+    print()
+
+# Save the trained model
+model.save("vgg16_brain_tumor_model.h5")
+
+# Fine-tuning: Unfreeze some of the VGG16 layers for better performance (optional)
+# Uncomment the following code for fine-tuning
+
+"""
+# Unfreeze the last 4 convolutional layers
+for layer in model.layers[0].layers[-4:]:
+    layer.trainable = True
+    
+# Recompile with a lower learning rate
+model.compile(
+    optimizer=Adam(learning_rate=0.00001),
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# Continue training with fine-tuning
+fine_tune_history = model.fit(
+    train_generator,
+    steps_per_epoch=train_generator.samples // batch_size,
+    epochs=10,
+    validation_data=test_generator,
+    validation_steps=test_generator.samples // batch_size
+)
+
+# Save the fine-tuned model
+model.save("vgg16_brain_tumor_model_fine_tuned.h5")
+"""
