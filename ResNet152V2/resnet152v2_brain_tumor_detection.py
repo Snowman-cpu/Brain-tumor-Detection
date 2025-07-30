@@ -11,7 +11,7 @@ from tensorflow.keras.layers import Dense, Dropout, Flatten, GlobalAveragePoolin
 from tensorflow.keras.optimizers import Adam
 
 # Set the path to the dataset
-dataset_path = "/kaggle/input/brain-tumor-mri-dataset"
+dataset_path = ""
 
 # Define the training and testing directories
 train_dir = os.path.join(dataset_path, "Training")
