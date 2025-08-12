@@ -1,4 +1,4 @@
-"""# 1. Import needed libraries"""
+"""# 1. Import libraries"""
 
 import os
 from PIL import Image
@@ -22,8 +22,6 @@ import warnings
 warnings.filterwarnings("ignore")
 
 """# 2. Preprocessing
-
-## 2.1 Load data
 """
 
 def train_df(tr_path):
@@ -69,13 +67,11 @@ ax.bar_label(ax.containers[0])
 
 plt.show()
 
-"""## 2.2 Split data into train, test, valid"""
 
 valid_df, ts_df = train_test_split(ts_df, train_size=0.5, random_state=20, stratify=ts_df['Class'])
 
 valid_df
 
-"""## 2.3 Data preprocessing"""
 
 batch_size = 32
 img_size = (299, 299)
@@ -98,7 +94,6 @@ ts_gen = ts_gen.flow_from_dataframe(ts_df, x_col='Class Path',
                                   y_col='Class', batch_size=16,
                                   target_size=img_size, shuffle=False)
 
-"""## 2.4 Getting samples from data"""
 
 class_dict = tr_gen.class_indices
 classes = list(class_dict.keys())
@@ -114,7 +109,7 @@ for i, (image, label) in enumerate(zip(images, labels)):
 
 plt.show()
 
-"""# 3. Building Deep Learning Model"""
+"""# 3.Deep Learning Model"""
 
 img_shape=(299,299,3)
 base_model = tf.keras.applications.Xception(include_top= False, weights= "imagenet",
@@ -151,7 +146,6 @@ hist = model.fit(tr_gen,
 
 hist.history.keys()
 
-"""## 4.1 Visualize model performance"""
 
 tr_acc = hist.history['accuracy']
 tr_loss = hist.history['loss']
@@ -225,9 +219,7 @@ plt.grid(True)
 plt.suptitle('Model Training Metrics Over Epochs', fontsize=16)
 plt.show()
 
-"""# 5. Testing and Evaluation
-
-## 5.1 Evaluate
+"""# 5. Evaluation
 """
 
 train_score = model.evaluate(tr_gen, verbose=1)
@@ -257,7 +249,6 @@ plt.show()
 clr = classification_report(ts_gen.classes, y_pred)
 print(clr)
 
-"""## 5.2 Testing"""
 
 def predict(img_path):
     import numpy as np
